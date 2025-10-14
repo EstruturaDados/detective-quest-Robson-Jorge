@@ -3,39 +3,85 @@
 #include <string.h>
 
 // ======================================================================
-// DESAFIO DETECTIVE QUEST - NÍVEL NOVATO: MAPA DA MANSÃO
-//
-// Implementa um mapa da mansão utilizando uma Árvore Binária, onde 
-// cada nó (Sala) representa um cômodo. A navegação utiliza recursão 
-// para simular a ação de "voltar" ao sair de uma sala.
+// DESAFIO DETECTIVE QUEST - ALGORITMOS AVANÇADOS
 // ======================================================================
 
 // --- ESTRUTURAS ---
 
 /**
  * @brief Estrutura que representa um cômodo (nó) na mansão.
- * Contém o nome da sala e ponteiros para os caminhos à esquerda e direita.
+ * Contém o nome da comodo e ponteiros para os caminhos à esquerda e direita.
  */
-typedef struct Sala {
+typedef struct Comodo {
     char nome[50];
-    struct Sala* esquerda;
-    struct Sala* direita;
-} Sala;
+    char pista[50]; 
+    struct Comodo* esquerda;
+    struct Comodo* direita;
+} Comodo;
+
+typedef struct Pista {
+    char descricao[50];
+    struct Pista* esquerda;
+    struct Pista* direita;
+} Pista;
 
 // --- FUNÇÕES AUXILIARES DE GERENCIAMENTO ---
 
 /**
- * @brief Cria e aloca memória para uma nova sala.
+ * @brief Cria e aloca memória para um novo cômodo.
  * @param nome O nome do cômodo.
- * @return Ponteiro para a nova Sala criada.
+ * @return Ponteiro para a nova Comodo criada.
  */
-Sala* criarSala(const char* nome) {
-    Sala* novaSala = (Sala*)malloc(sizeof(Sala));
-    strcpy(novaSala->nome, nome);
-    novaSala->esquerda = NULL;
-    novaSala->direita = NULL;
-    return novaSala;
+Comodo* criarComodo(const char* nome) {
+    Comodo* novoComodo = (Comodo*)malloc(sizeof(Comodo));
+    strcpy(novoComodo->nome, nome);
+    strcpy(novoComodo->pista, "");
+    novoComodo->esquerda = NULL;
+    novoComodo->direita = NULL;
+    return novoComodo;
 }
+
+/**
+ * @brief Cria e aloca memória para uma nova pista.
+ * @param descricao A descrição da pista.
+ * @return Ponteiro para a nova Pista criada.
+ */
+Pista* criarPista(const char* descricao) {
+    Pista* novaPista = (Pista*)malloc(sizeof(Pista));
+    strcpy(novaPista->descricao, descricao);
+    novaPista->esquerda = NULL;
+    novaPista->direita = NULL;
+    return novaPista;
+}
+
+/**
+ * @brief Insere uma nova pista na árvore de pistas.
+ * @param pista Ponteiro duplo para a raiz da árvore de pistas.
+ * @param nome A descrição da nova pista a ser inserida.
+ */
+void inserirPista(Pista** arvorePistas, const char* pista) {
+    if (*arvorePistas == NULL) {
+        *arvorePistas = criarPista(pista);
+    } else if (strcmp(pista, (*arvorePistas)->descricao) < 0) {
+        inserirPista(&((*arvorePistas)->esquerda), pista);
+    } else if(strcmp(pista, (*arvorePistas)->descricao) > 0) {
+        inserirPista(&((*arvorePistas)->direita), pista);
+    }
+}
+
+/**
+ * @brief Exibe todas as pistas armazenadas na árvore de pistas (em ordem).
+ * @param arvorePistas Ponteiro para a raiz da árvore de pistas.
+ */
+void exibirPistas(Pista* arvorePistas) {
+    if (arvorePistas != NULL) {
+        exibirPistas(arvorePistas->esquerda);
+        printf("- %s\n", arvorePistas->descricao);
+        exibirPistas(arvorePistas->direita);
+    }
+}
+
+// --- FUNÇÕES AUXILIARES ---
 
 /**
  * @brief Limpa o buffer de entrada para evitar problemas com scanf.
@@ -47,26 +93,38 @@ void limparBuffer() {
 
 /**
  * @brief Libera a memória alocada para as salas da mansão.
- * @param sala O nó (Sala) atual a ser liberado.
+ * @param comodo O nó (Comodo) atual a ser liberado.
  */
-void liberarSalas(Sala* sala) {
-    if (sala != NULL) {
-        liberarSalas(sala->esquerda);
-        liberarSalas(sala->direita);
-        free(sala);
+void liberarComodos(Comodo* comodo) {
+    if (comodo != NULL) {
+        liberarComodos(comodo->esquerda);
+        liberarComodos(comodo->direita);
+        free(comodo);
+    }
+}
+
+/**
+ * @brief Libera a memória alocada para as pistas.
+ * @param arvorePistas Ponteiro para a raiz da árvore de pistas.
+ */
+void liberarPistas(Pista* arvorePistas) {
+    if (arvorePistas != NULL) {
+        liberarPistas(arvorePistas->esquerda);
+        liberarPistas(arvorePistas->direita);
+        free(arvorePistas);
     }
 }
 
 // --- FUNÇÃO PRINCIPAL DE NAVEGAÇÃO (RECURSIVA) ---
 
 /**
- * @brief Permite ao jogador explorar as salas recursivamente.
+ * @brief Permite ao jogador explorar os cômodos da mansão recursivamente.
  * A recursão é usada para simular o "voltar" à sala anterior.
- * * @param sala O nó (Sala) atual onde o jogador se encontra.
+ * * @param sala O nó (Comodo) atual onde o jogador se encontra.
  */
-void explorarSalas(Sala* sala) {
-    if (sala == NULL) {
-        printf("Caminho sem saida. Voltando a sala anterior...\n");
+void explorarComodos(Comodo* comodo, Pista** arvorePistas) {
+    if (comodo == NULL) {
+        printf("Caminho sem saída. Voltando o cômodo anterior...\n");
         return;
     }
     char escolha;
@@ -74,43 +132,68 @@ void explorarSalas(Sala* sala) {
     do
     {
         printf("\n=============================================\n");
-        printf("Você está na sala: %s\n", sala->nome);
+        printf("Você está no cômodo: %s\n", comodo->nome);
+        if (strlen(comodo->pista) > 0) {
+            printf("Pista encontrada nesse cômodo: %s\n", comodo->pista);
+            inserirPista(arvorePistas, comodo->pista);
+        } else {
+            printf("Nenhuma pista encontrada aqui.\n");
+        }
         printf("=============================================\n");
+        // pausarExecucao();
 
         // Exibição das opções disponíveis para guiar o usuário
-        printf("Opções de Caminho:\n");
-        
-        if (sala->esquerda != NULL) {
-            printf("  [e] Ir para: %s\n", sala->esquerda->nome);
+        printf("\n=============================================\n");
+        printf("Ações e Opções de Caminho:\n");
+
+        // 1. Exibe as opções de Caminho (e, d) com o nome do cômodo
+        if (comodo->esquerda != NULL) {
+            printf("  [e] Ir para: %s\n", comodo->esquerda->nome);
         }
         
-        if (sala->direita != NULL) {
-            printf("  [d] Ir para: %s\n", sala->direita->nome);
+        if (comodo->direita != NULL) {
+            printf("  [d] Ir para: %s\n", comodo->direita->nome);
         }
         
-        printf("  [s] Voltar à sala anterior/sair da mansão\n"); 
-        printf("\nPara onde deseja ir? (e: esquerda, d: direita, s: sair/voltar): ");
+        // 2. Exibe as opções de Menu (p, s)
+        printf("  [p] Ver todas as pistas coletadas (em ordem)\n");
+        printf("  [s] Voltar ao cômodo anterior / Sair da mansão\n"); // Mensagem consolidada
+        printf("=============================================\n");
+        printf("Para onde deseja ir? (e: esquerda, d: direita, s: sair/voltar, p: ver pistas): ");
 
         scanf(" %c", &escolha);
         limparBuffer();
-        
-        if (escolha == 'e') {
-            if (sala->esquerda != NULL) {
-                explorarSalas(sala->esquerda);
-            } else {
-                printf("Caminho 'e' bloqueado ou inexistente. Tente novamente.\n");
-            }
-        } else if (escolha == 'd') {
-            if (sala->direita != NULL) {
-                explorarSalas(sala->direita);
-            } else {
-                printf("Caminho 'd' bloqueado ou inexistente. Tente novamente.\n");
-            }
-        } else if (escolha == 's') {
-            printf("Saindo da exploração.\n");
-        } else {
-            printf("Opção inválida. Tente novamente.\n");
+
+        switch (escolha) {
+            case 'e':
+                if(comodo->esquerda == NULL) {
+                    printf("Caminho 'e' bloqueado ou inexistente. Tente novamente.\n");
+                } else {
+                    explorarComodos(comodo->esquerda, arvorePistas);
+                }
+                break;
+            case 'd':
+                if(comodo->direita == NULL) {
+                    printf("Caminho 'd' bloqueado ou inexistente. Tente novamente.\n");
+                } else {
+                    explorarComodos(comodo->direita, arvorePistas);
+                }
+                break;
+            case 'p':
+                printf("\nPistas coletadas até agora:\n");
+                if (arvorePistas != NULL) {
+                    exibirPistas(*arvorePistas);
+                } else {
+                    printf("Nenhuma pista coletada ainda.\n");
+                }
+                break;
+            case 's':
+                printf("Saindo da exploração.\n");
+                break;
+            default:
+                printf("Opção inválida. Tente novamente.\n");
         }
+        
     } while (escolha != 's');
     
 }
@@ -119,29 +202,46 @@ void explorarSalas(Sala* sala) {
 int main() {
     // --- CONSTRUÇÃO DO MAPA (ÁRVORE FIXA/ESTÁTICA) ---
     // Nível 0 (Raiz)
-    Sala* hall = criarSala("Hall de Entrada"); 
+    Comodo* hall = criarComodo("Hall de Entrada"); 
     
     // Nível 1
-    Sala* biblioteca = criarSala("Biblioteca");
-    Sala* cozinha = criarSala("Cozinha");
+    Comodo* biblioteca = criarComodo("Biblioteca");
+    Comodo* salaDeEstar = criarComodo("Sala de Estar");
     hall->esquerda = biblioteca;
-    hall->direita = cozinha;
+    hall->direita = salaDeEstar;
     
     // Nível 2
-    Sala* sotao = criarSala("Sótão");
-    Sala* quarto = criarSala("Quarto Principal");
-    biblioteca->esquerda = sotao;
-    cozinha->direita = quarto;
+    Comodo* cozinha = criarComodo("Cozinha");
+    Comodo* quarto = criarComodo("Quarto Principal");
+    Comodo* banheiro = criarComodo("Banheiro");
+    biblioteca->direita = quarto;
+    biblioteca->esquerda = banheiro;
+    salaDeEstar->esquerda = cozinha;
     
     // Nível 3 (Folhas - Fim do Caminho)
-    Sala* banheiro = criarSala("Banheiro");
-    sotao->esquerda = banheiro;
+    Comodo* escritorio = criarComodo("Escritório");
+    Comodo* areaDeServico = criarComodo("Área de Serviço");
+    cozinha->direita = areaDeServico;
+    quarto->direita = escritorio;
+
+    // Adicionando pistas
+    strcpy(biblioteca->pista, "Diário faltando páginas.");
+    strcpy(cozinha->pista, "Faca com manchas de sangue.");
+    strcpy(quarto->pista, "Telefone quebrado.");
+    strcpy(banheiro->pista, "Toalha molhada.");
+    strcpy(areaDeServico->pista, "Garrafas de produtos de limpeza abertas.");
+    strcpy(escritorio->pista, "Bilhete encontrado: 'Libro azul na estante.'");
+
+    Pista* arvorePistas = NULL;
     
     // --- EXPLORAÇÃO ---
-    explorarSalas(hall);
+    explorarComodos(hall, &arvorePistas);
     
-    // --- LIMPEZA ---
-    liberarSalas(hall);
+    // --- LIMPEZA DA ÁRVORE DE COMODOS ---
+    liberarComodos(hall);
+    
+    // --- LIMPEZA DA ÁRVORE DE PISTAS ---
+    liberarPistas(arvorePistas);
     
     return 0;
 }
